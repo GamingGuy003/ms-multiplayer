@@ -80,11 +80,10 @@ impl Field {
                 for x in -1..=1 {
                     if (x == 0 || y == 0) && !(x == 0 && y == 0) {
                         let new_coords = Coords::new(coords.x + x, coords.y + y);
-                        println!("Checking {new_coords}");
                         match self.get_cell(new_coords) {
                             Some(cell) => match cell.value {
-                                Value::Empty => match cell.state {
-                                    State::Closed => self.open_adjacened(new_coords),
+                                Value::Empty | Value::Number(_) => match cell.state {
+                                    State::Closed => self.open_cell(new_coords),
                                     _ => {}
                                 },
                                 _ => {}
@@ -142,6 +141,32 @@ impl Field {
         if self.get_cell(coords).is_some() {
             self.field[coords.y as usize][coords.x as usize].state = state;
         }
+    }
+
+    pub fn check_win(&mut self) {
+        let mut num_marked = 0;
+        for x in 0..self.size.x {
+            for y in 0..self.size.y {
+                match self.get_cell(Coords::new(x, y)) {
+                    Some(cell) => match cell.value {
+                        Value::Bomb => match cell.state {
+                            State::Marked => num_marked += 1,
+                            _ => {}
+                        },
+                        _ => {}
+                    },
+                    _ => {}
+                }
+            }
+        }
+        if num_marked == self.bombc {
+            self.trigger_win()
+        }
+    }
+
+    pub fn trigger_win(&mut self) {
+        println!("You won!");
+        exit(0)
     }
 
     pub fn trigger_loss(&mut self) {
