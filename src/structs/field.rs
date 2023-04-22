@@ -9,7 +9,8 @@ use super::{
 
 pub struct Field {
     size: Coords,
-    pub bombc: usize,
+    generated: bool,
+    bombc: usize,
     pub field: Vec<Vec<Cell>>,
 }
 
@@ -17,6 +18,7 @@ impl Field {
     pub fn new(size: Coords, bombc: usize) -> Self {
         Self {
             size,
+            generated: false,
             bombc,
             field: vec![
                 vec![Cell::default(); size.x.try_into().unwrap_or_default()];
@@ -46,25 +48,46 @@ impl Field {
             }
         }
         self.calc_numbers();
+        self.generated = true;
     }
 
     pub fn open_cell(&mut self, coords: Coords) {
         match self.get_cell(coords) {
-            Some(cell) => match cell.value {
-                Value::Number(_) => self.set_state(coords, State::Opened),
-                Value::Bomb => self.trigger_loss(),
-                Value::Empty => self.open_adjacened(coords),
-            },
+            Some(cell) => {
+                if !self.generated {
+                    println!("generating");
+                    self.generate(coords);
+                }
+                match cell.value {
+                    Value::Number(_) => match cell.state {
+                        State::Closed => self.set_state(coords, State::Opened),
+                        State::Opened => self.open_adjacened_safe(coords),
+                        _ => {}
+                    },
+                    Value::Bomb => self.trigger_loss(),
+                    Value::Empty => self.open_adjacened(coords),
+                }
+            }
             None => {}
         }
     }
 
+    // sets state of cell as marked
+    pub fn mark_cell(&mut self, coords: Coords) {
+        if self.get_cell(coords).is_some() {
+            self.set_state(coords, State::Marked);
+            self.check_win();
+        }
+    }
+
+    // sets given cell for coord
     fn set_cell(&mut self, coords: Coords, cell: Cell) {
         if self.get_cell(coords).is_some() {
             self.field[coords.y as usize][coords.x as usize] = cell;
         }
     }
 
+    // returns cell or non if coord points nowhere
     fn get_cell(&mut self, coords: Coords) -> Option<Cell> {
         if (coords.x >= 0 && coords.y >= 0) && (coords.x < self.size.x && coords.y < self.size.y) {
             Some(self.field[coords.y as usize][coords.x as usize].clone())
@@ -73,6 +96,7 @@ impl Field {
         }
     }
 
+    // opens adjacened empty fields
     fn open_adjacened(&mut self, coords: Coords) {
         if self.get_cell(coords).is_some() {
             self.set_state(coords, State::Opened);
@@ -96,6 +120,31 @@ impl Field {
         }
     }
 
+    // opens all fields around coord where all bombs have been marked
+    fn open_adjacened_safe(&mut self, coords: Coords) {
+        match self.get_value(coords) {
+            Some(value) => match value {
+                Value::Number(_) => {
+                    for x in -1..=1 {
+                        for y in -1..=1 {
+                            let new_coords = Coords::new(coords.x + x, coords.y + y);
+                            match self.get_cell(new_coords) {
+                                Some(cell) => match cell.state {
+                                    State::Closed => self.open_cell(new_coords),
+                                    _ => {}
+                                },
+                                None => {}
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            },
+            None => {}
+        }
+    }
+
+    // calculates surrounding bombs for coord
     fn get_num(&mut self, coords: Coords) -> u8 {
         let mut num = 0;
         for y in -1..=1 {
@@ -112,6 +161,7 @@ impl Field {
         num
     }
 
+    // returns value of coord
     fn get_value(&mut self, coords: Coords) -> Option<Value> {
         match self.get_cell(coords) {
             Some(cell) => Some(cell.value),
@@ -119,6 +169,7 @@ impl Field {
         }
     }
 
+    // calculates all numbers in the field
     fn calc_numbers(&mut self) {
         for x in 0..self.size.x {
             for y in 0..self.size.y {
@@ -137,13 +188,15 @@ impl Field {
         }
     }
 
+    // sets the state for coord
     fn set_state(&mut self, coords: Coords, state: State) {
         if self.get_cell(coords).is_some() {
             self.field[coords.y as usize][coords.x as usize].state = state;
         }
     }
 
-    pub fn check_win(&mut self) {
+    // checks if all bombs have been marked
+    fn check_win(&mut self) {
         let mut num_marked = 0;
         for x in 0..self.size.x {
             for y in 0..self.size.y {
@@ -164,12 +217,16 @@ impl Field {
         }
     }
 
+    // win function
     pub fn trigger_win(&mut self) {
+        println!("{}", self);
         println!("You won!");
         exit(0)
     }
 
+    // fail function
     pub fn trigger_loss(&mut self) {
+        println!("{}", self);
         println!("You lost!");
         exit(0)
     }

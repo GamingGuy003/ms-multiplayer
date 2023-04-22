@@ -28,7 +28,6 @@ fn main() -> std::io::Result<()> {
 
     let mut field = Field::new(Coords::new(sizex, sizey), bombc);
 
-    field.generate(Coords::new(3, 2));
     println!("{field}");
     loop {
         let x = get_input(Some("x: ".to_owned()))?
@@ -37,7 +36,14 @@ fn main() -> std::io::Result<()> {
         let y = get_input(Some("y: ".to_owned()))?
             .parse::<i32>()
             .unwrap_or_default();
-        field.open_cell(Coords::new(x, y));
+        let action = get_input(Some("action: ".to_owned()))?;
+        let coords = Coords::new(x - 1, y - 1);
+        match action.as_str() {
+            "m" => field.mark_cell(coords),
+            "o" => field.open_cell(coords),
+            other => println!("{other}"),
+        }
+
         println!("{field}");
     }
 }
