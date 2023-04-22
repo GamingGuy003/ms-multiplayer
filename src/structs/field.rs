@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, process::exit};
 
 use rand::Rng;
 
@@ -48,13 +48,24 @@ impl Field {
         self.calc_numbers();
     }
 
-    pub fn set_cell(&mut self, coords: Coords, cell: Cell) {
+    pub fn open_cell(&mut self, coords: Coords) {
+        match self.get_cell(coords) {
+            Some(cell) => match cell.value {
+                Value::Number(_) => self.set_state(coords, State::Opened),
+                Value::Bomb => self.trigger_loss(),
+                Value::Empty => self.open_adjacened(coords),
+            },
+            None => {}
+        }
+    }
+
+    fn set_cell(&mut self, coords: Coords, cell: Cell) {
         if self.get_cell(coords).is_some() {
             self.field[coords.y as usize][coords.x as usize] = cell;
         }
     }
 
-    pub fn get_cell(&mut self, coords: Coords) -> Option<Cell> {
+    fn get_cell(&mut self, coords: Coords) -> Option<Cell> {
         if (coords.x >= 0 && coords.y >= 0) && (coords.x < self.size.x && coords.y < self.size.y) {
             Some(self.field[coords.y as usize][coords.x as usize].clone())
         } else {
@@ -62,26 +73,50 @@ impl Field {
         }
     }
 
+    fn open_adjacened(&mut self, coords: Coords) {
+        if self.get_cell(coords).is_some() {
+            self.set_state(coords, State::Opened);
+            for y in -1..=1 {
+                for x in -1..=1 {
+                    if (x == 0 || y == 0) && !(x == 0 && y == 0) {
+                        let new_coords = Coords::new(coords.x + x, coords.y + y);
+                        println!("Checking {new_coords}");
+                        match self.get_cell(new_coords) {
+                            Some(cell) => match cell.value {
+                                Value::Empty => match cell.state {
+                                    State::Closed => self.open_adjacened(new_coords),
+                                    _ => {}
+                                },
+                                _ => {}
+                            },
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fn get_num(&mut self, coords: Coords) -> u8 {
         let mut num = 0;
         for y in -1..=1 {
             for x in -1..=1 {
-                if self.check_bomb(Coords::new(coords.x + x, coords.y + y)) {
-                    num += 1;
-                } else {
+                match self.get_value(Coords::new(coords.x + x, coords.y + y)) {
+                    Some(value) => match value {
+                        Value::Bomb => num += 1,
+                        _ => {}
+                    },
+                    _ => {}
                 }
             }
         }
         num
     }
 
-    fn check_bomb(&mut self, coords: Coords) -> bool {
+    fn get_value(&mut self, coords: Coords) -> Option<Value> {
         match self.get_cell(coords) {
-            Some(cell) => match cell.value {
-                Value::Bomb => true,
-                _ => false,
-            },
-            _ => false,
+            Some(cell) => Some(cell.value),
+            _ => None,
         }
     }
 
@@ -101,6 +136,17 @@ impl Field {
                 }
             }
         }
+    }
+
+    fn set_state(&mut self, coords: Coords, state: State) {
+        if self.get_cell(coords).is_some() {
+            self.field[coords.y as usize][coords.x as usize].state = state;
+        }
+    }
+
+    pub fn trigger_loss(&mut self) {
+        println!("You lost!");
+        exit(0)
     }
 }
 

@@ -33,13 +33,13 @@ impl Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} ",
+            " {} ",
             match self.state {
-                State::Closed => String::from("⬛"),
-                State::Marked => String::from("🚩"),
+                State::Closed => String::from("■"),
+                State::Marked => String::from("⚑"),
                 State::Opened => match self.value {
                     Value::Empty => String::from(" "),
-                    Value::Bomb => String::from("X"),
+                    Value::Bomb => String::from("⚠"),
                     Value::Number(a) => a.to_string(),
                 },
             }

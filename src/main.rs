@@ -1,10 +1,7 @@
 use structs::coords::Coords;
 use util::funcs::get_input;
 
-use crate::structs::{
-    cell::{Cell, Value},
-    field::Field,
-};
+use crate::structs::field::Field;
 
 mod structs;
 mod util;
@@ -33,5 +30,14 @@ fn main() -> std::io::Result<()> {
 
     field.generate(Coords::new(3, 2));
     println!("{field}");
-    Ok(())
+    loop {
+        let x = get_input(Some("x: ".to_owned()))?
+            .parse::<i32>()
+            .unwrap_or_default();
+        let y = get_input(Some("y: ".to_owned()))?
+            .parse::<i32>()
+            .unwrap_or_default();
+        field.open_cell(Coords::new(x, y));
+        println!("{field}");
+    }
 }
