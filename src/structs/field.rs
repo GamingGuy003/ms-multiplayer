@@ -1,5 +1,6 @@
 use std::{fmt::Display, process::exit};
 
+use console::Style;
 use rand::Rng;
 
 use super::{
@@ -55,7 +56,6 @@ impl Field {
         match self.get_cell(coords) {
             Some(cell) => {
                 if !self.generated {
-                    println!("generating");
                     self.generate(coords);
                 }
                 match cell.value {
@@ -234,20 +234,31 @@ impl Field {
 
 impl Display for Field {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let sep = format!("+{}+\n", vec!["---"; self.size.x as usize].join("+"));
+        let italic = Style::new().italic();
+        let colc = format!(
+            "   |{}|",
+            (0..self.size.x)
+                .into_iter()
+                .map(|num| format!(" {} ", italic.apply_to(num + 1)))
+                .collect::<Vec<String>>()
+                .join("|")
+        );
+        let sep = format!("{}+\n", vec!["---"; (self.size.x + 1) as usize].join("+"));
         write!(
             f,
-            "{sep}{}{sep}",
+            "{colc}\n{sep}{}{sep}",
             self.field
                 .clone()
                 .into_iter()
-                .map(|line| {
+                .enumerate()
+                .map(|(idx, line)| {
                     format!(
-                        "|{}|\n",
+                        " {} |{}|\n",
+                        italic.apply_to(idx + 1),
                         line.into_iter()
                             .map(|cell| format!("{}", cell))
                             .collect::<Vec<String>>()
-                            .join("|")
+                            .join("|"),
                     )
                 })
                 .collect::<Vec<String>>()

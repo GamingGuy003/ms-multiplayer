@@ -44,6 +44,6 @@ fn main() -> std::io::Result<()> {
             other => println!("{other}"),
         }
 
-        println!("{field}");
+        print!("{field}");
     }
 }
