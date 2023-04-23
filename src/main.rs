@@ -1,3 +1,4 @@
+use cursive::{menu, views, Cursive, CursiveExt};
 use structs::coords::Coords;
 use util::funcs::get_input;
 
@@ -6,6 +7,22 @@ use crate::structs::field::Field;
 mod structs;
 mod util;
 fn main() -> std::io::Result<()> {
+    let mut crs = Cursive::new();
+    let mut options = menu::Tree::new();
+    options.add_item(menu::Item::leaf("Option1", |dings| {
+        let dialog = views::Dialog::new()
+            .content(views::TextView::new("Hello!"))
+            .button("Quit", |s| s.quit());
+        dings.add_layer(dialog);
+        println!("Option1 selected")
+    }));
+    options.add_item(menu::Item::leaf("Option2", |_| {
+        println!("Option2 selected")
+    }));
+    let menu = views::MenuPopup::new(options.into());
+    crs.add_layer(menu);
+    crs.run();
+    /*
     let sizex = get_input(Some("Enter width: ".to_owned()))?
         .parse::<i32>()
         .unwrap_or_default();
@@ -46,4 +63,6 @@ fn main() -> std::io::Result<()> {
 
         print!("{field}");
     }
+    */
+    Ok(())
 }
