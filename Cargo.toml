@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 console = "0.15.5"
-cursive =  { version = "0.20.0", features = ["pancurses-backend"] }
+cursive =  { version = "0.20.0", features = ["pancurses-backend"], default-features = false }
 rand = "0.8.5"
