@@ -5,13 +5,14 @@ use cursive::{
     views::MenuPopup,
     Cursive, CursiveExt,
 };
+use structs::{coords::Coords, field::Field};
 
 mod structs;
 mod util;
 fn main() -> std::io::Result<()> {
     let mut crs = Cursive::new();
-    let options = vec![("Open", |_| println!("Opened"))];
-    crs.add_layer(build_menu(options));
+    //crs.add_layer(action_menu());
+    crs.add_layer(draw_window(Field::new(Coords::new(9, 9), 10)));
     crs.run();
     Ok(())
 }
@@ -24,10 +25,30 @@ fn get_size(screen: &mut Cursive, x: &str) {
     );
 }
 
-fn build_menu(options: Vec<(&str, fn(&mut Cursive) -> ())>) -> MenuPopup {
+fn action_menu() -> MenuPopup {
     let mut tree = Tree::new();
-    options.iter().for_each(|option| {
-        tree.add_item(menu::Item::leaf(option.0, option.1));
-    });
+    tree.add_item(menu::Item::leaf("Open", |scr| {
+        let mut dialog = cursive::views::Dialog::around(cursive::views::TextView::new("opened"));
+        dialog.add_button("OK", |scr| {
+            scr.pop_layer();
+        });
+        scr.add_layer(dialog);
+    }));
+    tree.add_item(menu::Item::leaf("Marked", |scr| {
+        let mut dialog = cursive::views::Dialog::around(cursive::views::TextView::new("marked"));
+        dialog.add_button("OK", |scr| {
+            scr.pop_layer();
+        });
+        scr.add_layer(dialog);
+    }));
+    tree.add_item(menu::Item::leaf("Cancel", |scr| scr.quit()));
     MenuPopup::new(Rc::new(tree))
+}
+
+fn draw_window(field: Field) -> cursive::views::Canvas<String> {
+    cursive::views::Canvas::new(String::new())
+        .with_draw(move |text: &String, printer| {
+            printer.print((0, 0), format!("{}", field).as_str());
+        })
+        .with_required_size(|text, _constraints| (text.len(), 10).into())
 }
